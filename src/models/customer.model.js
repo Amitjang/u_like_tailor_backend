@@ -15,3 +15,22 @@ const customerSchema = new mongoose.Schema({
   }
 });
 module.exports = mongoose.model('Customer', customerSchema);
+
+// Example JSON for API testing
+/*
+{
+  "name": "John Doe",
+  "phone": "+1234567890",
+  "address": "123 Main Street, City, Country",
+  "tag": "VIP",
+  "notes": "Prefers cotton fabrics",
+  "measurements": {
+    "shoulder": 42,
+    "chest": 38,
+    "waist": 32,
+    "hip": 36,
+    "sleeve": 24,
+    "kurtiLength": 48
+  }
+}
+*/

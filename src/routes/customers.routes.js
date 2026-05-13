@@ -11,16 +11,16 @@ const {
 
 const router = express.Router();
 
-router.get("/", getCustomers);
+router.get("/getCustomers", getCustomers);
 
-router.get("/:customerId", getCustomerById);
+router.get("/getCustomerById/:customerId", getCustomerById);
 
-router.post("/", createCustomer);
+router.post("/createCustomer", createCustomer);
 
-router.patch("/:customerId", updateCustomer);
+router.patch("/updateCustomer/:customerId", updateCustomer);
 
-router.put("/:customerId/measurements", updateMeasurements);
+router.put("/updateMeasurements/:customerId", updateMeasurements);
 
-router.delete("/:customerId", deleteCustomer);
+router.delete("/deleteCustomer/:customerId", deleteCustomer);
 
 module.exports = router;
