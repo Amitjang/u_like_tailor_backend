@@ -1,0 +1,388 @@
+{
+  "baseUrl": "http://localhost:5000",
+  "note": "These are sample payloads. IDs/timestamps are examples.",
+  "apis": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "endpoint": "/api/health",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Backend is running",
+        "timestamp": "2026-05-08T17:00:00.000Z"
+      }
+    },
+    {
+      "name": "Register User",
+      "method": "POST",
+      "endpoint": "/api/auth/register",
+      "requestBody": {
+        "fullName": "Gaurav Chandel",
+        "mobile": "9876543210",
+        "email": "gaurav@example.com",
+        "password": "123456"
+      },
+      "successResponse": {
+        "success": true,
+        "message": "User registered successfully",
+        "data": {
+          "id": "USR1715187600000",
+          "fullName": "Gaurav Chandel",
+          "mobile": "9876543210",
+          "email": "gaurav@example.com"
+        }
+      }
+    },
+    {
+      "name": "Get My Profile",
+      "method": "GET",
+      "endpoint": "/api/auth/me/USR-1715187600000",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "User fetched successfully",
+        "data": {
+          "id": "USR-1715187600000",
+          "fullName": "Gaurav Chandel",
+          "mobile": "9876543210",
+          "email": "gaurav@example.com"
+        }
+      }
+    },
+    {
+      "name": "Login User",
+      "method": "POST",
+      "endpoint": "/api/auth/login",
+      "requestBody": {
+        "mobile": "9876543210",
+        "password": "123456"
+      },
+      "successResponse": {
+        "success": true,
+        "message": "Login successful",
+        "data": {
+          "id": "USR-1715187600000",
+          "fullName": "Gaurav Chandel",
+          "mobile": "9876543210",
+          "email": "gaurav@example.com",
+          "token": "token-USR-1715187600000"
+        }
+      }
+    },
+    {
+      "name": "Change Password",
+      "method": "PATCH",
+      "endpoint": "/api/auth/change-password/USR-1715187600000",
+      "requestBody": {
+        "oldPassword": "123456",
+        "newPassword": "12345678"
+      },
+      "successResponse": {
+        "success": true,
+        "message": "Password updated successfully"
+      }
+    },
+    {
+      "name": "Get Services",
+      "method": "GET",
+      "endpoint": "/api/services",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Services fetched successfully",
+        "data": [
+          {
+            "id": "SRV001",
+            "name": "Bridal Lehenga",
+            "category": "Women",
+            "price": 8500,
+            "deliveryDays": 10
+          }
+        ]
+      }
+    },
+    {
+      "name": "Create Service",
+      "method": "POST",
+      "endpoint": "/api/services",
+      "requestBody": {
+        "name": "Mens Kurta",
+        "category": "Men",
+        "price": 1500,
+        "deliveryDays": 4
+      },
+      "successResponse": {
+        "success": true,
+        "message": "Service created successfully",
+        "data": {
+          "id": "SRV-1715187601000",
+          "name": "Mens Kurta",
+          "category": "Men",
+          "price": 1500,
+          "deliveryDays": 4
+        }
+      }
+    },
+    {
+      "name": "Get Customers",
+      "method": "GET",
+      "endpoint": "/api/customers?tag=vip&q=priya",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Customers fetched successfully",
+        "data": [
+          {
+            "id": "CUST-001",
+            "name": "Priya Sharma",
+            "phone": "9876543210",
+            "address": "12 Shanti Nagar, Jaipur",
+            "tag": "vip",
+            "notes": "Prefers heavy embroidery.",
+            "measurements": {
+              "shoulder": 14.5,
+              "chest": 36
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Create Customer",
+      "method": "POST",
+      "endpoint": "/api/customers",
+      "requestBody": {
+        "name": "Rekha Gupta",
+        "phone": "9700112233",
+        "address": "23 Civil Lines, Allahabad",
+        "tag": "regular",
+        "notes": "Prefers silk fabrics.",
+        "measurements": {
+          "shoulder": 14,
+          "chest": 35
+        }
+      },
+      "successResponse": {
+        "success": true,
+        "message": "Customer created successfully",
+        "data": {
+          "id": "CUST-1715187602000",
+          "name": "Rekha Gupta"
+        }
+      }
+    },
+    {
+      "name": "Place Order",
+      "method": "POST",
+      "endpoint": "/api/orders",
+      "requestBody": {
+        "customerId": "CUST-001",
+        "customerName": "Gaurav Chandel",
+        "phone": "9876543210",
+        "serviceId": "SRV001",
+        "deadline": "2026-05-16",
+        "totalAmount": 8500,
+        "paidAmount": 2000,
+        "measurements": {
+          "chest": 38,
+          "waist": 34,
+          "length": 44
+        },
+        "address": "Sector 62, Noida"
+      },
+      "successResponse": {
+        "success": true,
+        "message": "Order created successfully",
+        "data": {
+          "id": "ORD-1715187603000",
+          "customerName": "Gaurav Chandel",
+          "phone": "9876543210",
+          "serviceId": "SRV001",
+          "dressType": "Bridal Lehenga",
+          "status": "pending",
+          "deadline": "2026-05-16",
+          "totalAmount": 8500,
+          "paidAmount": 2000,
+          "measurements": {
+            "chest": 38,
+            "waist": 34,
+            "length": 44
+          },
+          "address": "Sector 62, Noida",
+          "workerId": null,
+          "createdAt": "2026-05-08T17:00:00.000Z"
+        }
+      }
+    },
+    {
+      "name": "Get Orders (Filter + Search)",
+      "method": "GET",
+      "endpoint": "/api/orders?status=pending&phone=9876543210&q=ORD",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Orders fetched successfully",
+        "data": [
+          {
+            "id": "ORD-1715187603000",
+            "customerName": "Gaurav Chandel",
+            "phone": "9876543210",
+            "serviceId": "SRV001",
+            "dressType": "Bridal Lehenga",
+            "status": "pending",
+            "deadline": "2026-05-16",
+            "totalAmount": 8500,
+            "paidAmount": 2000,
+            "measurements": {
+              "chest": 38,
+              "waist": 34,
+              "length": 44
+            },
+            "address": "Sector 62, Noida",
+            "workerId": null,
+            "createdAt": "2026-05-08T17:00:00.000Z"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Update Order Status",
+      "method": "PATCH",
+      "endpoint": "/api/orders/ORD-1715187603000/status",
+      "requestBody": {
+        "status": "stitching"
+      },
+      "successResponse": {
+        "success": true,
+        "message": "Order status updated successfully"
+      }
+    },
+    {
+      "name": "Assign Worker to Order",
+      "method": "PATCH",
+      "endpoint": "/api/orders/ORD-1715187603000/assign-worker",
+      "requestBody": {
+        "workerId": "W-001"
+      },
+      "successResponse": {
+        "success": true,
+        "message": "Worker assigned successfully",
+        "data": {
+          "orderId": "ORD-1715187603000",
+          "workerId": "W-001"
+        }
+      }
+    },
+    {
+      "name": "Workers List",
+      "method": "GET",
+      "endpoint": "/api/workers",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Workers fetched successfully",
+        "data": [
+          {
+            "id": "W-001",
+            "name": "Ramesh Kumar",
+            "status": "active"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Worker Summary Cards",
+      "method": "GET",
+      "endpoint": "/api/workers/summary/cards",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Worker summary fetched successfully",
+        "data": {
+          "activeWorkers": 2,
+          "freeWorkers": 1,
+          "totalOrders": 2
+        }
+      }
+    },
+    {
+      "name": "Get Due Payments",
+      "method": "GET",
+      "endpoint": "/api/payments/dues",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Due payments fetched successfully",
+        "data": [
+          {
+            "orderId": "ORD-1042",
+            "customerName": "Priya Sharma",
+            "amountDue": 3500,
+            "status": "ready"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Receive Payment",
+      "method": "POST",
+      "endpoint": "/api/payments/receive",
+      "requestBody": {
+        "orderId": "ORD-1042",
+        "amount": 1500,
+        "mode": "Cash",
+        "note": "Final trial ke baad payment"
+      },
+      "successResponse": {
+        "success": true,
+        "message": "Payment recorded successfully",
+        "data": {
+          "payment": {
+            "id": "PAY-1715187604000",
+            "orderId": "ORD-1042",
+            "amount": 1500,
+            "mode": "Cash"
+          },
+          "orderPaidAmount": 6500,
+          "orderDueAmount": 2000
+        }
+      }
+    },
+    {
+      "name": "Today Payment Summary",
+      "method": "GET",
+      "endpoint": "/api/payments/summary/today",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Today payment summary fetched successfully",
+        "data": {
+          "receivedToday": 3500,
+          "totalUdhaar": 5200,
+          "cashAmount": 2000,
+          "upiAmount": 1500,
+          "partialAmount": 0
+        }
+      }
+    },
+    {
+      "name": "Dashboard KPI",
+      "method": "GET",
+      "endpoint": "/api/dashboard/kpis",
+      "requestBody": null,
+      "successResponse": {
+        "success": true,
+        "message": "Dashboard KPIs fetched successfully",
+        "data": {
+          "totalOrders": 2,
+          "pendingOrders": 0,
+          "readyOrders": 1,
+          "totalCustomers": 2,
+          "activeWorkers": 2,
+          "totalDue": 5100
+        }
+      }
+    }
+  ]
+}
