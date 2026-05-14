@@ -17,7 +17,7 @@ router.get("/summary/cards", getWorkerSummary);
 
 router.post("/createWorker", createWorker);
 
-router.patch("/ /:workerId", updateWorker);
+router.patch("/updateWorker/:workerId", updateWorker);
 
 router.patch("/toggle-status/:workerId", toggleWorkerStatus);
 
