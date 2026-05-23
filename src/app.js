@@ -12,7 +12,10 @@ const dashboardRoutes = require("./routes/dashboard.routes");
 const app = express();
 
 app.use(cors());
+
+// IMPORTANT
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/api/health", (_req, res) => {
   res.status(200).json({
@@ -29,6 +32,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/workers", workerRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/testing", require("./routes/testing.routes"));
 
 app.use((_req, res) => {
   res.status(404).json({

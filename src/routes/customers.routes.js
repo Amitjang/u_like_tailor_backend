@@ -9,15 +9,27 @@ const {
   deleteCustomer,
 } = require("../controller/customer.controller");
 
+const upload = require("../config/mutler");
+
 const router = express.Router();
 
 router.get("/getCustomers", getCustomers);
 
 router.get("/getCustomerById/:customerId", getCustomerById);
 
-router.post("/createCustomer", createCustomer);
+// FIXED
+router.post(
+  "/createCustomer",
+  upload.single("image"),
+  createCustomer
+);
 
-router.patch("/updateCustomer/:customerId", updateCustomer);
+// FIXED
+router.patch(
+  "/updateCustomer/:customerId",
+  upload.single("image"),
+  updateCustomer
+);
 
 router.put("/updateMeasurements/:customerId", updateMeasurements);
 
