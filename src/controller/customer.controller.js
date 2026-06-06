@@ -3,11 +3,21 @@ const Customer = require("../models/customer.model");
 const Order = require("../models/order.model");
 const cloudinary = require("../config/cloudinary");
 // GET ALL CUSTOMERS
+
 const getCustomers = async (req, res) => {
   try {
-    const { tag, q } = req.query;
+    const { userId, tag, q } = req.query;
 
-    const filter = {};
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
+
+    const filter = {
+      userId,
+    };
 
     if (tag) {
       filter.tag = tag;
@@ -23,17 +33,18 @@ const getCustomers = async (req, res) => {
       ];
     }
 
-    const customers = await Customer.find(filter).lean();
+    const customers = await Customer.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.status(200).json({
       success: true,
       message: "Customers fetched successfully",
+      total: customers.length,
       data: customers,
     });
-
   } catch (error) {
-
-    console.log(error);
+    console.error(error);
 
     return res.status(500).json({
       success: false,
@@ -45,15 +56,16 @@ const getCustomers = async (req, res) => {
 
 // GET SINGLE CUSTOMER
 const getCustomerById = async (req, res) => {
-
   try {
-
     const { customerId } = req.params;
+    const { userId } = req.query;
 
-    const customer = await Customer.findById(customerId).lean();
+    const customer = await Customer.findOne({
+      _id: customerId,
+      userId,
+    }).lean();
 
     if (!customer) {
-
       return res.status(404).json({
         success: false,
         message: "Customer not found",
@@ -61,10 +73,7 @@ const getCustomerById = async (req, res) => {
     }
 
     const customerOrders = await Order.find({
-      $or: [
-        { customerId: customer._id.toString() },
-        { phone: customer.phone },
-      ],
+      customerId: customer._id.toString(),
     }).lean();
 
     return res.status(200).json({
@@ -76,10 +85,8 @@ const getCustomerById = async (req, res) => {
         orders: customerOrders,
       },
     });
-
   } catch (error) {
-
-    console.log(error);
+    console.error(error);
 
     return res.status(500).json({
       success: false,
@@ -88,26 +95,46 @@ const getCustomerById = async (req, res) => {
     });
   }
 };
-
 // CREATE CUSTOMER
 
 
 
 const createCustomer = async (req, res) => {
   try {
+    const {
+      userId,
+      name,
+      phone,
+      address,
+      nameHi,
+      tag,
+      notes,
+      notesHi,
+      lastOrderType,
+      lastOrderTypeHi,
+      semanticLabel,
+      avatarColor,
+    } = req.body;
 
-    const name = req.body.name;
-    const phone = req.body.phone;
-    const address = req.body.address;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
 
     if (!name || !phone || !address) {
       return res.status(400).json({
         success: false,
-        message: "name, phone, address are required",
+        message: "name, phone and address are required",
       });
     }
 
-    const existingCustomer = await Customer.findOne({ phone });
+    // Check duplicate customer for same user only
+    const existingCustomer = await Customer.findOne({
+      userId,
+      phone,
+    });
 
     if (existingCustomer) {
       return res.status(409).json({
@@ -116,7 +143,6 @@ const createCustomer = async (req, res) => {
       });
     }
 
-    // Cloudinary URL already available from multer-storage-cloudinary
     const imageUrl = req.file?.path || "";
 
     const measurements = {
@@ -173,18 +199,19 @@ const createCustomer = async (req, res) => {
       .toUpperCase();
 
     const customer = await Customer.create({
+      userId,
       name,
       phone,
       address,
 
-      nameHi: req.body.nameHi || "",
-      tag: req.body.tag || "regular",
-      notes: req.body.notes || "",
-      notesHi: req.body.notesHi || "",
-      lastOrderType: req.body.lastOrderType || "",
-      lastOrderTypeHi: req.body.lastOrderTypeHi || "",
-      semanticLabel: req.body.semanticLabel || "",
-      avatarColor: req.body.avatarColor || "#7B1FA2",
+      nameHi: nameHi || "",
+      tag: tag || "regular",
+      notes: notes || "",
+      notesHi: notesHi || "",
+      lastOrderType: lastOrderType || "",
+      lastOrderTypeHi: lastOrderTypeHi || "",
+      semanticLabel: semanticLabel || "",
+      avatarColor: avatarColor || "#7B1FA2",
 
       initials,
       measurements,
@@ -196,10 +223,8 @@ const createCustomer = async (req, res) => {
       message: "Customer created successfully",
       data: customer,
     });
-
   } catch (error) {
-
-    console.error(error);
+    console.error("Create Customer Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -311,8 +336,15 @@ const createCustomer = async (req, res) => {
 // UPDATE CUSTOMER
 const updateCustomer = async (req, res) => {
   try {
-
     const { customerId } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
 
     const updates = {};
 
@@ -345,7 +377,7 @@ const updateCustomer = async (req, res) => {
         .toUpperCase();
     }
 
-    // Update measurements
+    // Measurements
     updates.measurements = {
       shoulder:
         req.body.measurements?.shoulder ||
@@ -384,7 +416,6 @@ const updateCustomer = async (req, res) => {
         req.body["measurements[neckSize]"],
     };
 
-    // Remove undefined measurement fields
     Object.keys(updates.measurements).forEach((key) => {
       if (
         updates.measurements[key] === undefined ||
@@ -394,14 +425,19 @@ const updateCustomer = async (req, res) => {
       }
     });
 
-    // Update image
+    // Image update
     if (req.file?.path) {
       updates.imageUrl = req.file.path;
     }
 
-    const customer = await Customer.findByIdAndUpdate(
-      customerId,
-      { $set: updates },
+    const customer = await Customer.findOneAndUpdate(
+      {
+        _id: customerId,
+        userId: userId,
+      },
+      {
+        $set: updates,
+      },
       {
         new: true,
         runValidators: true,
@@ -411,7 +447,7 @@ const updateCustomer = async (req, res) => {
     if (!customer) {
       return res.status(404).json({
         success: false,
-        message: "Customer not found",
+        message: "Customer not found or access denied",
       });
     }
 
@@ -420,9 +456,7 @@ const updateCustomer = async (req, res) => {
       message: "Customer updated successfully",
       data: customer,
     });
-
   } catch (error) {
-
     console.error(error);
 
     return res.status(500).json({
@@ -435,10 +469,15 @@ const updateCustomer = async (req, res) => {
 // UPDATE MEASUREMENTS
 const updateMeasurements = async (req, res) => {
   try {
-
     const { customerId } = req.params;
+    const { userId, measurements } = req.body;
 
-    const { measurements } = req.body;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
 
     if (!measurements) {
       return res.status(400).json({
@@ -447,8 +486,11 @@ const updateMeasurements = async (req, res) => {
       });
     }
 
-    const customer = await Customer.findByIdAndUpdate(
-      customerId,
+    const customer = await Customer.findOneAndUpdate(
+      {
+        _id: customerId,
+        userId: userId,
+      },
       {
         $set: {
           measurements,
@@ -463,7 +505,7 @@ const updateMeasurements = async (req, res) => {
     if (!customer) {
       return res.status(404).json({
         success: false,
-        message: "Customer not found",
+        message: "Customer not found or access denied",
       });
     }
 
@@ -472,9 +514,7 @@ const updateMeasurements = async (req, res) => {
       message: "Measurements updated successfully",
       data: customer,
     });
-
   } catch (error) {
-
     console.error(error);
 
     return res.status(500).json({
@@ -486,18 +526,26 @@ const updateMeasurements = async (req, res) => {
 };
 // DELETE CUSTOMER
 const deleteCustomer = async (req, res) => {
-
   try {
-
     const { customerId } = req.params;
+    const { userId } = req.body;
 
-    const deletedCustomer = await Customer.findByIdAndDelete(customerId);
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
+
+    const deletedCustomer = await Customer.findOneAndDelete({
+      _id: customerId,
+      userId: userId,
+    });
 
     if (!deletedCustomer) {
-
       return res.status(404).json({
         success: false,
-        message: "Customer not found",
+        message: "Customer not found or access denied",
       });
     }
 
@@ -506,10 +554,8 @@ const deleteCustomer = async (req, res) => {
       message: "Customer deleted successfully",
       data: deletedCustomer,
     });
-
   } catch (error) {
-
-    console.log(error);
+    console.error(error);
 
     return res.status(500).json({
       success: false,
