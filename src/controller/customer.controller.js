@@ -130,7 +130,6 @@ const createCustomer = async (req, res) => {
       });
     }
 
-    // Check duplicate customer for same user only
     const existingCustomer = await Customer.findOne({
       userId,
       phone,
@@ -145,52 +144,21 @@ const createCustomer = async (req, res) => {
 
     const imageUrl = req.file?.path || "";
 
-    const measurements = {
-      shoulder:
-        req.body.measurements?.shoulder ||
-        req.body["measurements[shoulder]"] ||
-        "",
+    // Dynamic measurements
+    let measurements = {};
 
-      chest:
-        req.body.measurements?.chest ||
-        req.body["measurements[chest]"] ||
-        "",
+    if (req.body.measurements) {
+      measurements = req.body.measurements;
+    }
 
-      waist:
-        req.body.measurements?.waist ||
-        req.body["measurements[waist]"] ||
-        "",
+    // For multipart/form-data
+    Object.keys(req.body).forEach((key) => {
+      const match = key.match(/^measurements\[(.+)\]$/);
 
-      hip:
-        req.body.measurements?.hip ||
-        req.body["measurements[hip]"] ||
-        "",
-
-      height:
-        req.body.measurements?.height ||
-        req.body["measurements[height]"] ||
-        "",
-
-      sleeve:
-        req.body.measurements?.sleeve ||
-        req.body["measurements[sleeve]"] ||
-        "",
-
-      kurtiLength:
-        req.body.measurements?.kurtiLength ||
-        req.body["measurements[kurtiLength]"] ||
-        "",
-
-      trouserLength:
-        req.body.measurements?.trouserLength ||
-        req.body["measurements[trouserLength]"] ||
-        "",
-
-      neckSize:
-        req.body.measurements?.neckSize ||
-        req.body["measurements[neckSize]"] ||
-        "",
-    };
+      if (match) {
+        measurements[match[1]] = req.body[key];
+      }
+    });
 
     const initials = name
       .split(" ")
@@ -203,7 +171,6 @@ const createCustomer = async (req, res) => {
       name,
       phone,
       address,
-
       nameHi: nameHi || "",
       tag: tag || "regular",
       notes: notes || "",
@@ -212,7 +179,6 @@ const createCustomer = async (req, res) => {
       lastOrderTypeHi: lastOrderTypeHi || "",
       semanticLabel: semanticLabel || "",
       avatarColor: avatarColor || "#7B1FA2",
-
       initials,
       measurements,
       imageUrl,
@@ -233,105 +199,7 @@ const createCustomer = async (req, res) => {
     });
   }
 };
-// const createCustomer = async (req, res) => {
 
-//   try {
-
-//     const {
-//       id,
-//       name,
-//       nameHi,
-//       phone,
-//       address,
-//       tag,
-//       notes,
-//       notesHi,
-//       lastOrderType,
-//       lastOrderTypeHi,
-//       semanticLabel,
-//       avatarColor,
-//       measurements,
-//     } = req.body;
-//     console.log("Received data:", req.body);
-//     process.stdout.write("Received file: ");
-//     console.log(req.file);
-
-//     if (!name || !phone || !address) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "recived data "+req.body.name+" name, phone, address are required",
-//         //  "name, phone, address are required",
-//       });
-//     }
-
-//     const existingCustomer = await Customer.findOne({ phone });
-
-//     if (existingCustomer) {
-
-//       return res.status(409).json({
-//         success: false,
-//         message: "Customer already exists with this phone",
-//       });
-//     }
-
-//     // AUTO INITIALS
-//     const initials = name
-//       .split(" ")
-//       .map((e) => e[0])
-//       .join("")
-//       .toUpperCase();
-
-//     const customer = await Customer.create({
-
-//       name,
-
-//       nameHi: nameHi || "",
-
-//       phone,
-
-//       address,
-
-//       tag: tag || "regular",
-
-//       totalOrders: 0,
-
-//       lastOrderType: lastOrderType || "",
-
-//       lastOrderTypeHi: lastOrderTypeHi || "",
-
-//       notes: notes || "",
-
-//       notesHi: notesHi || "",
-
-//       avatarColor: avatarColor || "#7B1FA2",
-
-//       initials,
-
-//       measurements: measurements || {},
-
-//       // PERMANENT CLOUDINARY URL
-//       imageUrl: req.file?.path || "",
-
-//       semanticLabel: semanticLabel || "",
-//     });
-
-//     return res.status(201).json({
-//       success: true,
-//       message: "Customer created successfully",
-//       data: customer,
-//     });
-
-//   } catch (error) {
-
-//     console.log(error);
-
-//     return res.status(500).json({
-//       success: false,
-//       message: "Unable to create customer",
-//       error: error.message,
-//     });
-//   }
-// };
 
 // UPDATE CUSTOMER
 const updateCustomer = async (req, res) => {
@@ -377,53 +245,26 @@ const updateCustomer = async (req, res) => {
         .toUpperCase();
     }
 
-    // Measurements
-    updates.measurements = {
-      shoulder:
-        req.body.measurements?.shoulder ||
-        req.body["measurements[shoulder]"],
+    // Dynamic Measurements
+    let measurements = {};
 
-      chest:
-        req.body.measurements?.chest ||
-        req.body["measurements[chest]"],
+    // JSON request
+    if (req.body.measurements) {
+      measurements = req.body.measurements;
+    }
 
-      waist:
-        req.body.measurements?.waist ||
-        req.body["measurements[waist]"],
+    // multipart/form-data support
+    Object.keys(req.body).forEach((key) => {
+      const match = key.match(/^measurements\[(.+)\]$/);
 
-      hip:
-        req.body.measurements?.hip ||
-        req.body["measurements[hip]"],
-
-      height:
-        req.body.measurements?.height ||
-        req.body["measurements[height]"],
-
-      sleeve:
-        req.body.measurements?.sleeve ||
-        req.body["measurements[sleeve]"],
-
-      kurtiLength:
-        req.body.measurements?.kurtiLength ||
-        req.body["measurements[kurtiLength]"],
-
-      trouserLength:
-        req.body.measurements?.trouserLength ||
-        req.body["measurements[trouserLength]"],
-
-      neckSize:
-        req.body.measurements?.neckSize ||
-        req.body["measurements[neckSize]"],
-    };
-
-    Object.keys(updates.measurements).forEach((key) => {
-      if (
-        updates.measurements[key] === undefined ||
-        updates.measurements[key] === null
-      ) {
-        delete updates.measurements[key];
+      if (match) {
+        measurements[match[1]] = req.body[key];
       }
     });
+
+    if (Object.keys(measurements).length > 0) {
+      updates.measurements = measurements;
+    }
 
     // Image update
     if (req.file?.path) {
@@ -433,7 +274,7 @@ const updateCustomer = async (req, res) => {
     const customer = await Customer.findOneAndUpdate(
       {
         _id: customerId,
-        userId: userId,
+        userId,
       },
       {
         $set: updates,
@@ -457,7 +298,7 @@ const updateCustomer = async (req, res) => {
       data: customer,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Update Customer Error:", error);
 
     return res.status(500).json({
       success: false,
@@ -479,28 +320,17 @@ const updateMeasurements = async (req, res) => {
       });
     }
 
-    if (!measurements) {
+    if (!measurements || typeof measurements !== "object") {
       return res.status(400).json({
         success: false,
         message: "Measurements are required",
       });
     }
 
-    const customer = await Customer.findOneAndUpdate(
-      {
-        _id: customerId,
-        userId: userId,
-      },
-      {
-        $set: {
-          measurements,
-        },
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const customer = await Customer.findOne({
+      _id: customerId,
+      userId,
+    });
 
     if (!customer) {
       return res.status(404).json({
@@ -508,6 +338,15 @@ const updateMeasurements = async (req, res) => {
         message: "Customer not found or access denied",
       });
     }
+
+    customer.measurements = {
+      ...(customer.measurements instanceof Map
+        ? Object.fromEntries(customer.measurements)
+        : customer.measurements),
+      ...measurements,
+    };
+
+    await customer.save();
 
     return res.status(200).json({
       success: true,

@@ -1,24 +1,18 @@
 const Worker = require("../models/worker.model");
-const Order = require("../models/order.model"); // if you have order model
+const Order = require("../models/order.model");
 const { makeId } = require("../utils/helpers");
+
 
 /// GET ALL WORKERS
 const getWorkers = async (_req, res) => {
   try {
-    const workers = await Worker.find();
+    const workers = await Worker.find()
+      .sort({ createdAt: -1 });
 
-    const data = await Promise.all(
-      workers.map(async (worker) => {
-        const assignedOrders = await Order.find({
-          _id: { $in: worker.assignedOrderIds },
-        });
-
-        return {
-          ...worker._doc,
-          assignedOrders,
-        };
-      })
-    );
+    const data = workers.map((worker) => ({
+      ...worker.toObject(),
+      assignedOrders: worker.assignedOrderIds,
+    }));
 
     return res.status(200).json({
       success: true,
@@ -33,7 +27,36 @@ const getWorkers = async (_req, res) => {
   }
 };
 
-/// SUMMARY
+/// GET SINGLE WORKER
+const getWorkerById = async (req, res) => {
+  try {
+    const worker = await Worker.findById(req.params.workerId)
+      .populate("assignedOrderIds");
+
+    if (!worker) {
+      return res.status(404).json({
+        success: false,
+        message: "Worker not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Worker fetched successfully",
+      data: {
+        ...worker.toObject(),
+        assignedOrders: worker.assignedOrderIds,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/// WORKER SUMMARY
 const getWorkerSummary = async (_req, res) => {
   try {
     const activeWorkers = await Worker.countDocuments({
@@ -47,7 +70,7 @@ const getWorkerSummary = async (_req, res) => {
     const workers = await Worker.find();
 
     const totalOrders = workers.reduce(
-      (sum, item) => sum + item.assignedOrderIds.length,
+      (sum, worker) => sum + worker.assignedOrderIds.length,
       0
     );
 
@@ -57,6 +80,7 @@ const getWorkerSummary = async (_req, res) => {
       data: {
         activeWorkers,
         freeWorkers,
+        totalWorkers: activeWorkers + freeWorkers,
         totalOrders,
       },
     });
@@ -71,19 +95,50 @@ const getWorkerSummary = async (_req, res) => {
 /// CREATE WORKER
 const createWorker = async (req, res) => {
   try {
-    const { name, phone, specialization } = req.body;
+    const {
+      name,
+      nameHi,
+      phone,
+      specialization,
+      specializationHi,
+      avatarColor,
+    } = req.body;
 
     if (!name || !phone || !specialization) {
       return res.status(400).json({
         success: false,
-        message: "name, phone, specialization are required",
+        message: "name, phone and specialization are required",
       });
     }
 
+    const exists = await Worker.findOne({ phone });
+
+    if (exists) {
+      return res.status(400).json({
+        success: false,
+        message: "Worker already exists with this phone number",
+      });
+    }
+
+    const photo = req.file
+      ? req.file.path || req.file.location || req.file.secure_url
+      : "";
+
     const worker = await Worker.create({
+      workerId: makeId("W"),
       name,
+      nameHi,
       phone,
       specialization,
+      specializationHi,
+      avatarColor: avatarColor || "#1565C0",
+      photo,
+      initials: name
+        .trim()
+        .split(" ")
+        .map((item) => item[0])
+        .join("")
+        .toUpperCase(),
       status: "free",
       assignedOrderIds: [],
     });
@@ -104,9 +159,7 @@ const createWorker = async (req, res) => {
 /// UPDATE WORKER
 const updateWorker = async (req, res) => {
   try {
-    const worker = await Worker.findOne({
-      _id: req.params.workerId,
-    });
+    const worker = await Worker.findById(req.params.workerId);
 
     if (!worker) {
       return res.status(404).json({
@@ -115,12 +168,40 @@ const updateWorker = async (req, res) => {
       });
     }
 
-    const { name, phone, specialization, status } = req.body;
+    const {
+      name,
+      nameHi,
+      phone,
+      specialization,
+      specializationHi,
+      avatarColor,
+      status,
+    } = req.body;
 
-    if (name) worker.name = name;
+    if (name) {
+      worker.name = name;
+      worker.initials = name
+        .trim()
+        .split(" ")
+        .map((item) => item[0])
+        .join("")
+        .toUpperCase();
+    }
+
+    if (nameHi) worker.nameHi = nameHi;
     if (phone) worker.phone = phone;
     if (specialization) worker.specialization = specialization;
+    if (specializationHi) worker.specializationHi = specializationHi;
+    if (avatarColor) worker.avatarColor = avatarColor;
     if (status) worker.status = status;
+
+    // Update photo if uploaded
+    if (req.file) {
+      worker.photo =
+        req.file.path ||
+        req.file.location ||
+        req.file.secure_url;
+    }
 
     await worker.save();
 
@@ -137,12 +218,90 @@ const updateWorker = async (req, res) => {
   }
 };
 
+/// ASSIGN ORDER TO WORKER
+const assignOrderToWorker = async (req, res) => {
+  try {
+    const { workerId, orderId } = req.body;
+
+    const worker = await Worker.findById(workerId);
+    const order = await Order.findById(orderId);
+
+    if (!worker) {
+      return res.status(404).json({
+        success: false,
+        message: "Worker not found",
+      });
+    }
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!worker.assignedOrderIds.includes(orderId)) {
+      worker.assignedOrderIds.push(orderId);
+    }
+
+    worker.status = "active";
+
+    await worker.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order assigned successfully",
+      data: worker,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/// REMOVE ORDER FROM WORKER
+const removeOrderFromWorker = async (req, res) => {
+  try {
+    const { workerId, orderId } = req.body;
+
+    const worker = await Worker.findById(workerId);
+
+    if (!worker) {
+      return res.status(404).json({
+        success: false,
+        message: "Worker not found",
+      });
+    }
+
+    worker.assignedOrderIds = worker.assignedOrderIds.filter(
+      (id) => id.toString() !== orderId
+    );
+
+    if (worker.assignedOrderIds.length === 0) {
+      worker.status = "free";
+    }
+
+    await worker.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order removed successfully",
+      data: worker,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 /// TOGGLE STATUS
 const toggleWorkerStatus = async (req, res) => {
   try {
-    const worker = await Worker.findOne({
-      _id: req.params.workerId,
-    });
+    const worker = await Worker.findById(req.params.workerId);
 
     if (!worker) {
       return res.status(404).json({
@@ -158,7 +317,7 @@ const toggleWorkerStatus = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Worker status toggled successfully",
+      message: "Worker status updated successfully",
       data: worker,
     });
   } catch (error) {
@@ -172,9 +331,7 @@ const toggleWorkerStatus = async (req, res) => {
 /// DELETE WORKER
 const deleteWorker = async (req, res) => {
   try {
-    const worker = await Worker.findOne({
-      _id: req.params.workerId,
-    });
+    const worker = await Worker.findById(req.params.workerId);
 
     if (!worker) {
       return res.status(404).json({
@@ -190,14 +347,11 @@ const deleteWorker = async (req, res) => {
       });
     }
 
-    await Worker.deleteOne({
-      _id: req.params.workerId,
-    });
+    await Worker.findByIdAndDelete(req.params.workerId);
 
     return res.status(200).json({
       success: true,
       message: "Worker deleted successfully",
-      data: worker,
     });
   } catch (error) {
     return res.status(500).json({
@@ -209,9 +363,12 @@ const deleteWorker = async (req, res) => {
 
 module.exports = {
   getWorkers,
+  getWorkerById,
   getWorkerSummary,
   createWorker,
   updateWorker,
+  assignOrderToWorker,
+  removeOrderFromWorker,
   toggleWorkerStatus,
   deleteWorker,
 };

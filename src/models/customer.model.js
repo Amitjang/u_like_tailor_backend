@@ -17,13 +17,12 @@
 const mongoose = require("mongoose");
 
 const customerSchema = new mongoose.Schema(
-
   {
-     userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
     name: {
       type: String,
@@ -87,19 +86,13 @@ const customerSchema = new mongoose.Schema(
       default: "",
     },
 
+    // Dynamic Measurements
     measurements: {
-      shoulder: { type: String, default: "" },
-      chest: { type: String, default: "" },
-      waist: { type: String, default: "" },
-      hip: { type: String, default: "" },
-      height: { type: String, default: "" },
-      sleeve: { type: String, default: "" },
-      kurtiLength: { type: String, default: "" },
-      trouserLength: { type: String, default: "" },
-      neckSize: { type: String, default: "" },
+      type: Map,
+      of: mongoose.Schema.Types.Mixed,
+      default: {},
     },
 
-    // Permanent Image URL
     imageUrl: {
       type: String,
       default: "",
@@ -116,12 +109,13 @@ const customerSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Customer", customerSchema);
+
+
 // module.exports = mongoose.model('Customer', customerSchema);
 
 // Example JSON for API testing
 /*
-{
-  "name": "John Doe",
+    "name": "John Doe",
   "phone": "+1234567890",
   "address": "123 Main Street, City, Country",
   "tag": "VIP",
