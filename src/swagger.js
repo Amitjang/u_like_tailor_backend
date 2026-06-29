@@ -10,7 +10,8 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:5000",
+        url: "https://u-like-tailor-backend.onrender.com",
+        description: "Development server",
       },
     ],
   },
