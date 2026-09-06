@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { userSchema, serviceSchema } = require("../data/store");
 
 const orderSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
